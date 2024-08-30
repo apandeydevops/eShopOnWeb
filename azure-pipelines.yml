@@ -1,0 +1,47 @@
+# azure-pipelines.yml
+trigger:
+  branches:
+    include:
+      - main
+      - master
+
+pool:
+  vmImage: 'windows-latest' # Using the latest Windows-based image
+
+variables:
+  buildConfiguration: 'Release' # Set the build configuration to Release
+
+stages:
+  - stage: Build
+    jobs:
+      - job: Build
+        displayName: 'Build eShopOnWeb'
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Install .NET SDK'
+            inputs:
+              packageType: 'sdk'
+              version: '7.x.x' # Specify the version of the .NET SDK you want to use
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+
+          - checkout: self # Checkout the code from the repository
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore NuGet packages'
+            inputs:
+              command: 'restore'
+              projects: '**/*.csproj'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Build the solution'
+            inputs:
+              command: 'build'
+              projects: '**/*.csproj'
+              arguments: '--configuration $(buildConfiguration)'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Run Unit Tests'
+            inputs:
+              command: 'test'
+              projects: '**/*Tests/*.csproj'
+              arguments: '--configuration $(buildConfiguration) --no-build --verbosity normal'
